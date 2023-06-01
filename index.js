@@ -16,7 +16,7 @@ const resizeImage = async (imagePath, outputDirectory, percentage) => {
     }
 }
 
-const getImageName = (imagePath, width = null) {
+const getImageName = (imagePath, width = null) => {
     const pathTokens = imagePath.split('/')
     const fileName = pathTokens[pathTokens.length - 1]
 
@@ -35,13 +35,13 @@ const generatePictureElement = (resizedImageName, originalImageName) => {
         <picture>
         <source media="(max-width: 810px)" srcset="${resizedImageName}">
         <source media="(min-width: 811px)" srcset="${originalImageName}">
-        <img src="${originalImageName}>
+        <img src="${originalImageName}">
         </picture>
     `
     return pictureElement
 }
 
-const batchProcessImages = (directoryPath, outputDirectory) => {
+const batchProcessImages = async (directoryPath, outputDirectory) => {
     const files = fs.readdirSync(directoryPath)
 
     if(!fs.existsSync(outputDirectory)) {
@@ -51,7 +51,7 @@ const batchProcessImages = (directoryPath, outputDirectory) => {
     const pictureElements = []
 
     for (const file of files) {
-        const imagePath = `${directoryPath/$file}`
+        const imagePath = `${directoryPath}/${file}`
         const {resizedImageName, originalImageName } = await resizeImage(imagePath, outputDirectory, 0.33)
         const pictureElement = generatePictureElement(resizedImageName, originalImageName)
         pictureElements.push(pictureElement)
@@ -59,3 +59,10 @@ const batchProcessImages = (directoryPath, outputDirectory) => {
 
     fs.writeFileSync(`${outputDirectory}/output.html`, pictureElements.join('\n'))
 }
+
+const directoryPath = '../barbarabeirne.com/v2/appalachian/images'
+const outputDirectory = './output/appalachian'
+
+batchProcessImages(directoryPath, outputDirectory)
+    .then( () => console.log('done'))
+    .catch( (error) => console.error('error:', error))
