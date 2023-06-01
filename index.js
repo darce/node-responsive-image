@@ -1,5 +1,6 @@
 const fs = require('fs')
 const sharp = require('sharp')
+const path = require('path')
 
 const resizeImage = async (imagePath, outputDirectory, percentage) => {
     const image = sharp(imagePath)
@@ -17,14 +18,12 @@ const resizeImage = async (imagePath, outputDirectory, percentage) => {
 }
 
 const getImageName = (imagePath, width = null) => {
-    const pathTokens = imagePath.split('/')
-    const fileName = pathTokens[pathTokens.length - 1]
+    const fileName = path.basename(imagePath)
 
     if (width) {
-        const extensionIndex = fileName.lastIndexOf('.')
-        const nameRoot = fileName.substring(0, extensionIndex)
-        const fileExtension = fileName.substring(extensionIndex)
-        return `${nameRoot}-${width}w${fileExtension}`
+        const extension = path.extname(fileName)
+        const nameRoot = path.basename(fileName, extension)
+        return `${nameRoot}-${width}w${extension}`
     }
 
     return fileName
@@ -44,17 +43,21 @@ const generatePictureElement = (resizedImageName, originalImageName) => {
 const batchProcessImages = async (directoryPath, outputDirectory) => {
     const files = fs.readdirSync(directoryPath)
 
-    if(!fs.existsSync(outputDirectory)) {
-        fs.mkdirSync(outputDirectory, {recursive: true})
+    if (!fs.existsSync(outputDirectory)) {
+        fs.mkdirSync(outputDirectory, { recursive: true })
     }
 
     const pictureElements = []
 
     for (const file of files) {
-        const imagePath = `${directoryPath}/${file}`
-        const {resizedImageName, originalImageName } = await resizeImage(imagePath, outputDirectory, 0.33)
+        const imagePath = path.join(directoryPath, file)
+        const { resizedImageName, originalImageName } = await resizeImage(imagePath, outputDirectory, 0.9)
         const pictureElement = generatePictureElement(resizedImageName, originalImageName)
         pictureElements.push(pictureElement)
+
+        /** Copy original image to output directory */
+        const destinationPath = path.join(outputDirectory, path.basename(originalImageName))
+        fs.copyFileSync(imagePath, destinationPath)
     }
 
     fs.writeFileSync(`${outputDirectory}/output.html`, pictureElements.join('\n'))
@@ -64,5 +67,5 @@ const directoryPath = '../barbarabeirne.com/v2/appalachian/images'
 const outputDirectory = './output/appalachian'
 
 batchProcessImages(directoryPath, outputDirectory)
-    .then( () => console.log('done'))
-    .catch( (error) => console.error('error:', error))
+    .then(() => console.log('done'))
+    .catch((error) => console.error('error:', error))
